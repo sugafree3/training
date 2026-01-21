@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>演唱會搶票速度訓練模擬器 - 固定按鈕版</title>
+    <title>演唱會搶票速度訓練模擬器 - 倒數與按鈕合一版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -105,7 +105,7 @@
             margin-bottom: 5px;
         }
         
-        .countdown {
+        .countdown-info {
             text-align: center;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -116,13 +116,6 @@
         .countdown-text {
             font-size: 1.1rem;
             margin-bottom: 10px;
-        }
-        
-        #countdown-timer {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #ff0080;
-            text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
         }
         
         .ticket-area {
@@ -137,35 +130,40 @@
             overflow: hidden;
         }
         
-        #grab-button {
-            padding: 20px 50px;
-            font-size: 1.8rem;
+        #combined-button {
+            padding: 25px 60px;
+            font-size: 2.5rem;
             font-weight: bold;
-            background: linear-gradient(90deg, #ff0080, #ff8c00);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
+            transition: all 0.3s;
             box-shadow: 0 5px 15px rgba(255, 0, 128, 0.4);
-            transition: all 0.2s;
-            opacity: 0;
-            transform: scale(0.8);
-            /* 固定在中央位置 */
-            position: static;
-            margin: auto;
+            width: 80%;
+            max-width: 400px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
         
-        #grab-button.visible {
-            opacity: 1;
-            transform: scale(1);
+        #combined-button.countdown {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            color: #ff0080;
+            cursor: not-allowed;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
         }
         
-        #grab-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(255, 0, 128, 0.6);
+        #combined-button.ready {
+            background: linear-gradient(90deg, #ff0080, #ff8c00);
+            cursor: pointer;
+            animation: pulse 1s infinite alternate;
         }
         
-        #grab-button:active {
+        #combined-button.clicked {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
             transform: scale(0.95);
         }
         
@@ -325,21 +323,6 @@
             100% { background-color: transparent; }
         }
         
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            
-            h1 {
-                font-size: 2.2rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* 新增：難度選擇器 */
         .difficulty-selector {
             display: flex;
             justify-content: center;
@@ -353,6 +336,8 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            border: none;
+            color: white;
         }
         
         .difficulty-btn.active {
@@ -372,13 +357,62 @@
             background: linear-gradient(90deg, #ff0080, #ff0000);
         }
         
-        /* 新增：固定按鈕提示 */
-        .fixed-button-notice {
+        .combined-notice {
             text-align: center;
             color: #ff8c00;
             margin-top: 10px;
             font-size: 0.9rem;
             opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            #combined-button {
+                padding: 20px 40px;
+                font-size: 2rem;
+                min-height: 100px;
+            }
+        }
+        
+        /* 新增：按鈕狀態指示器 */
+        .status-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #666;
+        }
+        
+        .status-dot.active {
+            background-color: #00ff88;
+        }
+        
+        .status-dot.waiting {
+            background-color: #ff0080;
+        }
+        
+        .status-label {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #ff8c00;
         }
     </style>
 </head>
@@ -386,8 +420,8 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-guitar"></i> 演唱會搶票速度訓練模擬器</h1>
-            <p class="subtitle">訓練你的反應速度，成為搶票達人！</p>
-            <p class="subtitle">固定按鈕版本 - 專注訓練點擊速度</p>
+            <p class="subtitle">倒數計時與搶票按鈕合一版本 - 真實搶票體驗</p>
+            <p class="subtitle">倒數結束後，按鈕會變色，立即點擊！</p>
         </header>
         
         <div class="main-content">
@@ -405,17 +439,22 @@
                     </div>
                 </div>
                 
-                <div class="countdown">
-                    <div class="countdown-text">搶票按鈕出現倒數計時</div>
-                    <div id="countdown-timer">5.00</div>
+                <div class="countdown-info">
+                    <div class="countdown-text">搶票倒數計時與按鈕合一</div>
+                    <div class="status-label" id="status-label">準備開始</div>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="status-dot-1"></div>
+                        <div class="status-dot" id="status-dot-2"></div>
+                        <div class="status-dot" id="status-dot-3"></div>
+                    </div>
                 </div>
                 
                 <div class="ticket-area">
-                    <button id="grab-button">立即搶票！</button>
+                    <button id="combined-button">準備開始</button>
                 </div>
                 
-                <div class="fixed-button-notice">
-                    <i class="fas fa-info-circle"></i> 按鈕固定在中央位置，專注訓練點擊速度
+                <div class="combined-notice">
+                    <i class="fas fa-info-circle"></i> 倒數計時與搶票按鈕合一，倒數結束後按鈕會變色，立即點擊！
                 </div>
                 
                 <div class="result-display">
@@ -423,11 +462,11 @@
                     <div id="result-time">-- 秒</div>
                 </div>
                 
-                <!-- 新增：難度選擇 -->
+                <!-- 難度選擇 -->
                 <div class="difficulty-selector">
-                    <button class="difficulty-btn easy active" data-difficulty="easy">簡單模式</button>
-                    <button class="difficulty-btn medium" data-difficulty="medium">中等模式</button>
-                    <button class="difficulty-btn hard" data-difficulty="hard">困難模式</button>
+                    <button class="difficulty-btn easy active" data-difficulty="easy">簡單模式 (5秒)</button>
+                    <button class="difficulty-btn medium" data-difficulty="medium">中等模式 (3秒)</button>
+                    <button class="difficulty-btn hard" data-difficulty="hard">困難模式 (2秒)</button>
                 </div>
                 
                 <div class="controls">
@@ -472,14 +511,15 @@
         </div>
         
         <div class="instructions">
-            <h3><i class="fas fa-info-circle"></i> 使用說明 - 固定按鈕版本</h3>
+            <h3><i class="fas fa-info-circle"></i> 使用說明 - 倒數與按鈕合一版本</h3>
             <ul>
                 <li>1. 選擇難度模式：簡單(5秒)、中等(3秒)、困難(2秒)倒數</li>
                 <li>2. 點擊「開始訓練」按鈕開始模擬搶票</li>
-                <li>3. 等待倒數計時結束，「立即搶票」按鈕會固定在中央出現</li>
-                <li>4. 以最快速度點擊按鈕，系統會記錄你的反應時間</li>
-                <li>5. 反覆練習以提高反應速度和穩定性</li>
-                <li>6. 使用「重設數據」按鈕清除所有統計資料</li>
+                <li>3. 同一個按鈕會顯示倒數計時 (灰色不可點擊狀態)</li>
+                <li>4. 倒數結束後，按鈕會變成橘紅色 (可點擊狀態)</li>
+                <li>5. 立即點擊按鈕，系統會記錄你的反應時間</li>
+                <li>6. 反覆練習以提高反應速度和穩定性</li>
+                <li>7. 使用「重設數據」按鈕清除所有統計資料</li>
                 <li><strong>目標：</strong>專業搶票者的平均反應時間約為0.2-0.3秒，試著挑戰這個成績！</li>
             </ul>
         </div>
@@ -487,10 +527,9 @@
 
     <script>
         // 元素引用
-        const grabButton = document.getElementById('grab-button');
+        const combinedButton = document.getElementById('combined-button');
         const startBtn = document.getElementById('start-btn');
         const resetBtn = document.getElementById('reset-btn');
-        const countdownTimer = document.getElementById('countdown-timer');
         const resultTime = document.getElementById('result-time');
         const attemptCount = document.getElementById('attempt-count');
         const bestTime = document.getElementById('best-time');
@@ -498,6 +537,10 @@
         const lastTime = document.getElementById('last-time');
         const historyList = document.getElementById('history-list');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const statusLabel = document.getElementById('status-label');
+        const statusDot1 = document.getElementById('status-dot-1');
+        const statusDot2 = document.getElementById('status-dot-2');
+        const statusDot3 = document.getElementById('status-dot-3');
         
         // 狀態變量
         let isActive = false;
@@ -505,14 +548,14 @@
         let reactionTimes = [];
         let countdownInterval = null;
         let countdownValue = 5; // 預設值，會根據難度調整
-        let buttonTimeout = null;
         let currentDifficulty = 'easy'; // 預設難度
+        let isButtonReady = false; // 按鈕是否準備好被點擊
         
         // 難度設定
         const difficultySettings = {
-            easy: { countdown: 5, delay: 0 },
-            medium: { countdown: 3, delay: 0 },
-            hard: { countdown: 2, delay: 0 }
+            easy: { countdown: 5, color: '#00b09b' },
+            medium: { countdown: 3, color: '#ff8c00' },
+            hard: { countdown: 2, color: '#ff0080' }
         };
         
         // 從本地存儲加載數據
@@ -584,47 +627,51 @@
             
             isActive = true;
             startBtn.disabled = true;
-            grabButton.classList.remove('visible');
+            isButtonReady = false;
+            
+            // 重置結果顯示
             resultTime.textContent = '-- 秒';
             
             // 根據難度設置倒數時間
             countdownValue = difficultySettings[currentDifficulty].countdown;
-            countdownTimer.textContent = countdownValue.toFixed(2);
+            
+            // 設置按鈕為倒數狀態
+            combinedButton.className = 'countdown';
+            combinedButton.textContent = countdownValue.toFixed(1);
+            combinedButton.disabled = true;
+            
+            // 更新狀態指示器
+            updateStatusIndicator('counting');
             
             // 清除可能的計時器
             if (countdownInterval) clearInterval(countdownInterval);
-            if (buttonTimeout) clearTimeout(buttonTimeout);
             
             // 開始倒數計時
             countdownInterval = setInterval(() => {
-                countdownValue -= 0.01;
-                countdownTimer.textContent = countdownValue.toFixed(2);
+                countdownValue -= 0.1;
+                combinedButton.textContent = countdownValue.toFixed(1);
                 
                 if (countdownValue <= 0) {
                     clearInterval(countdownInterval);
-                    countdownTimer.textContent = '0.00';
-                    // 立即顯示按鈕（沒有隨機延遲）
-                    showButton();
+                    // 倒數結束，按鈕變為可點擊
+                    combinedButton.className = 'ready';
+                    combinedButton.textContent = '立即搶票！';
+                    combinedButton.disabled = false;
+                    isButtonReady = true;
+                    startTime = Date.now();
+                    
+                    // 更新狀態指示器
+                    updateStatusIndicator('ready');
+                    
+                    // 播放提示音
+                    playBeepSound();
                 }
-            }, 10);
+            }, 100);
         }
         
-        // 顯示搶票按鈕 - 固定在中央位置
-        function showButton() {
-            if (!isActive) return;
-            
-            // 按鈕固定在中央，不需要設置隨機位置
-            // 顯示按鈕並開始計時
-            grabButton.classList.add('visible', 'pulse');
-            startTime = Date.now();
-            
-            // 播放音效
-            playBeepSound();
-        }
-        
-        // 處理搶票按鈕點擊
-        function handleGrabClick() {
-            if (!isActive || startTime === 0) return;
+        // 處理按鈕點擊
+        function handleButtonClick() {
+            if (!isActive || !isButtonReady) return;
             
             const reactionTime = (Date.now() - startTime) / 1000; // 轉換為秒
             reactionTimes.push(reactionTime);
@@ -633,7 +680,11 @@
             resultTime.textContent = reactionTime.toFixed(3) + ' 秒';
             resultTime.parentElement.classList.add('success');
             
-            // 視覺反饋
+            // 按鈕視覺反饋
+            combinedButton.className = 'clicked';
+            combinedButton.textContent = '搶票成功！';
+            
+            // 頁面視覺反饋
             document.body.style.backgroundColor = '#003315';
             setTimeout(() => {
                 document.body.style.backgroundColor = '';
@@ -644,25 +695,33 @@
             updateStats();
             saveStats();
             
-            // 重置狀態
-            resetTraining();
+            // 更新狀態指示器
+            updateStatusIndicator('success');
             
             // 播放成功音效
             playSuccessSound();
+            
+            // 重置狀態（2秒後）
+            setTimeout(() => {
+                resetTraining();
+            }, 2000);
         }
         
         // 重置訓練
         function resetTraining() {
             isActive = false;
             startBtn.disabled = false;
+            isButtonReady = false;
             startTime = 0;
-            grabButton.classList.remove('visible', 'pulse');
             
             if (countdownInterval) clearInterval(countdownInterval);
-            if (buttonTimeout) clearTimeout(buttonTimeout);
             
-            // 重置為當前難度的倒數時間
-            countdownTimer.textContent = difficultySettings[currentDifficulty].countdown.toFixed(2);
+            combinedButton.className = '';
+            combinedButton.textContent = '準備開始';
+            combinedButton.disabled = false;
+            
+            // 更新狀態指示器
+            updateStatusIndicator('idle');
         }
         
         // 重設所有數據
@@ -687,22 +746,39 @@
                 }
             });
             
-            // 更新倒數顯示
-            if (!isActive) {
-                countdownTimer.textContent = difficultySettings[difficulty].countdown.toFixed(2);
-            }
-            
-            // 根據難度改變按鈕顏色
-            grabButton.style.background = getButtonColor(difficulty);
+            // 更新狀態指示器顏色
+            updateStatusIndicator('idle');
         }
         
-        // 根據難度獲取按鈕顏色
-        function getButtonColor(difficulty) {
-            switch(difficulty) {
-                case 'easy': return 'linear-gradient(90deg, #00b09b, #96c93d)';
-                case 'medium': return 'linear-gradient(90deg, #ff8c00, #ff5500)';
-                case 'hard': return 'linear-gradient(90deg, #ff0080, #ff0000)';
-                default: return 'linear-gradient(90deg, #ff0080, #ff8c00)';
+        // 更新狀態指示器
+        function updateStatusIndicator(status) {
+            // 重置所有指示燈
+            statusDot1.className = 'status-dot';
+            statusDot2.className = 'status-dot';
+            statusDot3.className = 'status-dot';
+            
+            switch(status) {
+                case 'idle':
+                    statusLabel.textContent = '準備開始';
+                    statusDot1.className = 'status-dot active';
+                    break;
+                case 'counting':
+                    statusLabel.textContent = '倒數計時中...';
+                    statusDot1.className = 'status-dot waiting';
+                    statusDot2.className = 'status-dot waiting';
+                    break;
+                case 'ready':
+                    statusLabel.textContent = '立即點擊！';
+                    statusDot1.className = 'status-dot waiting';
+                    statusDot2.className = 'status-dot waiting';
+                    statusDot3.className = 'status-dot active';
+                    break;
+                case 'success':
+                    statusLabel.textContent = '搶票成功！';
+                    statusDot1.className = 'status-dot active';
+                    statusDot2.className = 'status-dot active';
+                    statusDot3.className = 'status-dot active';
+                    break;
             }
         }
         
@@ -773,7 +849,7 @@
         // 事件監聽
         startBtn.addEventListener('click', startTraining);
         resetBtn.addEventListener('click', resetStats);
-        grabButton.addEventListener('click', handleGrabClick);
+        combinedButton.addEventListener('click', handleButtonClick);
         
         // 難度選擇事件
         difficultyButtons.forEach(btn => {
@@ -785,9 +861,10 @@
         // 初始化
         loadStats();
         setDifficulty('easy'); // 預設為簡單模式
+        updateStatusIndicator('idle');
         
         // 初始提示
-        console.log("固定按鈕版本 - 準備好訓練你的搶票反應速度了嗎？點擊「開始訓練」按鈕開始！");
+        console.log("倒數與按鈕合一版本 - 準備好訓練你的搶票反應速度了嗎？點擊「開始訓練」按鈕開始！");
     </script>
 </body>
 </html>
