@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>演唱會搶票速度訓練模擬器 - 倒數與按鈕合一版</title>
+    <title>演唱會搶票速度訓練模擬器 - 單次點擊限制版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -147,6 +147,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            user-select: none;
         }
         
         #combined-button.countdown {
@@ -162,9 +163,25 @@
             animation: pulse 1s infinite alternate;
         }
         
+        #combined-button.ready:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(255, 0, 128, 0.6);
+        }
+        
         #combined-button.clicked {
             background: linear-gradient(90deg, #00ff88, #00cc6a);
             transform: scale(0.95);
+            cursor: default;
+            animation: none;
+        }
+        
+        #combined-button.disabled {
+            background: linear-gradient(90deg, #666666, #888888);
+            color: #cccccc;
+            cursor: not-allowed;
+            animation: none;
+            transform: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         
         .result-display {
@@ -270,13 +287,19 @@
             color: white;
         }
         
+        #start-btn:disabled {
+            background: linear-gradient(90deg, #666666, #888888);
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+        
         #reset-btn {
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
@@ -340,6 +363,11 @@
             color: white;
         }
         
+        .difficulty-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         .difficulty-btn.active {
             transform: scale(1.1);
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
@@ -363,6 +391,24 @@
             margin-top: 10px;
             font-size: 0.9rem;
             opacity: 0.8;
+        }
+        
+        .click-notice {
+            text-align: center;
+            color: #ff8c00;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        
+        .single-click-warning {
+            background: rgba(255, 0, 128, 0.1);
+            border-left: 4px solid #ff0080;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
         }
         
         @media (max-width: 768px) {
@@ -414,14 +460,22 @@
             font-size: 1rem;
             color: #ff8c00;
         }
+        
+        .attempt-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #ff8c00;
+            font-size: 1rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1><i class="fas fa-guitar"></i> 演唱會搶票速度訓練模擬器</h1>
-            <p class="subtitle">倒數計時與搶票按鈕合一版本 - 真實搶票體驗</p>
-            <p class="subtitle">倒數結束後，按鈕會變色，立即點擊！</p>
+            <p class="subtitle">單次點擊限制版本 - 只能點擊一次，模擬真實搶票</p>
+            <p class="subtitle">按鈕出現後只能點擊一次，點擊後立即失效</p>
         </header>
         
         <div class="main-content">
@@ -449,12 +503,20 @@
                     </div>
                 </div>
                 
+                <div class="single-click-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 重要提示：按鈕出現後只能點擊一次！點擊後按鈕會立即失效，請務必準確點擊！
+                </div>
+                
                 <div class="ticket-area">
                     <button id="combined-button">準備開始</button>
                 </div>
                 
-                <div class="combined-notice">
-                    <i class="fas fa-info-circle"></i> 倒數計時與搶票按鈕合一，倒數結束後按鈕會變色，立即點擊！
+                <div class="click-notice" id="click-notice">
+                    <i class="fas fa-mouse-pointer"></i> 按鈕出現後，請立即點擊（只能點擊一次）
+                </div>
+                
+                <div class="attempt-info" id="attempt-info">
+                    本輪嘗試：尚未開始
                 </div>
                 
                 <div class="result-display">
@@ -464,9 +526,9 @@
                 
                 <!-- 難度選擇 -->
                 <div class="difficulty-selector">
-                    <button class="difficulty-btn easy active" data-difficulty="easy">簡單模式 (5秒)</button>
-                    <button class="difficulty-btn medium" data-difficulty="medium">中等模式 (3秒)</button>
-                    <button class="difficulty-btn hard" data-difficulty="hard">困難模式 (2秒)</button>
+                    <button class="difficulty-btn easy active" data-difficulty="easy" id="easy-btn">簡單模式 (5秒)</button>
+                    <button class="difficulty-btn medium" data-difficulty="medium" id="medium-btn">中等模式 (3秒)</button>
+                    <button class="difficulty-btn hard" data-difficulty="hard" id="hard-btn">困難模式 (2秒)</button>
                 </div>
                 
                 <div class="controls">
@@ -511,15 +573,16 @@
         </div>
         
         <div class="instructions">
-            <h3><i class="fas fa-info-circle"></i> 使用說明 - 倒數與按鈕合一版本</h3>
+            <h3><i class="fas fa-info-circle"></i> 使用說明 - 單次點擊限制版本</h3>
             <ul>
                 <li>1. 選擇難度模式：簡單(5秒)、中等(3秒)、困難(2秒)倒數</li>
                 <li>2. 點擊「開始訓練」按鈕開始模擬搶票</li>
                 <li>3. 同一個按鈕會顯示倒數計時 (灰色不可點擊狀態)</li>
                 <li>4. 倒數結束後，按鈕會變成橘紅色 (可點擊狀態)</li>
-                <li>5. 立即點擊按鈕，系統會記錄你的反應時間</li>
-                <li>6. 反覆練習以提高反應速度和穩定性</li>
-                <li>7. 使用「重設數據」按鈕清除所有統計資料</li>
+                <li>5. <strong>重要：按鈕只能點擊一次！</strong>點擊後按鈕會立即失效</li>
+                <li>6. 系統會記錄你的反應時間並顯示結果</li>
+                <li>7. 反覆練習以提高反應速度和準確性</li>
+                <li>8. 使用「重設數據」按鈕清除所有統計資料</li>
                 <li><strong>目標：</strong>專業搶票者的平均反應時間約為0.2-0.3秒，試著挑戰這個成績！</li>
             </ul>
         </div>
@@ -541,6 +604,11 @@
         const statusDot1 = document.getElementById('status-dot-1');
         const statusDot2 = document.getElementById('status-dot-2');
         const statusDot3 = document.getElementById('status-dot-3');
+        const clickNotice = document.getElementById('click-notice');
+        const attemptInfo = document.getElementById('attempt-info');
+        const easyBtn = document.getElementById('easy-btn');
+        const mediumBtn = document.getElementById('medium-btn');
+        const hardBtn = document.getElementById('hard-btn');
         
         // 狀態變量
         let isActive = false;
@@ -550,6 +618,8 @@
         let countdownValue = 5; // 預設值，會根據難度調整
         let currentDifficulty = 'easy'; // 預設難度
         let isButtonReady = false; // 按鈕是否準備好被點擊
+        let hasClicked = false; // 是否已經點擊過
+        let currentAttempt = 0; // 當前嘗試次數
         
         // 難度設定
         const difficultySettings = {
@@ -564,6 +634,7 @@
             if (savedTimes) {
                 reactionTimes = JSON.parse(savedTimes);
                 updateStats();
+                currentAttempt = reactionTimes.length;
             }
         }
         
@@ -628,9 +699,17 @@
             isActive = true;
             startBtn.disabled = true;
             isButtonReady = false;
+            hasClicked = false;
+            currentAttempt++;
+            
+            // 禁用難度選擇按鈕
+            difficultyButtons.forEach(btn => {
+                btn.disabled = true;
+            });
             
             // 重置結果顯示
             resultTime.textContent = '-- 秒';
+            attemptInfo.textContent = `本輪嘗試：#${currentAttempt}`;
             
             // 根據難度設置倒數時間
             countdownValue = difficultySettings[currentDifficulty].countdown;
@@ -642,6 +721,7 @@
             
             // 更新狀態指示器
             updateStatusIndicator('counting');
+            clickNotice.innerHTML = '<i class="fas fa-hourglass-half"></i> 倒數計時中，請等待...';
             
             // 清除可能的計時器
             if (countdownInterval) clearInterval(countdownInterval);
@@ -658,20 +738,51 @@
                     combinedButton.textContent = '立即搶票！';
                     combinedButton.disabled = false;
                     isButtonReady = true;
+                    hasClicked = false;
                     startTime = Date.now();
                     
                     // 更新狀態指示器
                     updateStatusIndicator('ready');
+                    clickNotice.innerHTML = '<i class="fas fa-mouse-pointer"></i> 按鈕已出現！立即點擊（只能點擊一次）';
                     
                     // 播放提示音
                     playBeepSound();
+                    
+                    // 設置自動超時（5秒後如果沒點擊，自動結束）
+                    setTimeout(() => {
+                        if (isButtonReady && !hasClicked) {
+                            // 超時未點擊
+                            handleTimeout();
+                        }
+                    }, 5000);
                 }
             }, 100);
         }
         
+        // 處理超時未點擊
+        function handleTimeout() {
+            if (!isActive || hasClicked) return;
+            
+            clickNotice.innerHTML = '<i class="fas fa-clock"></i> 超時未點擊！本次嘗試無效';
+            attemptInfo.textContent = `本輪嘗試：#${currentAttempt} (超時未點擊)`;
+            
+            // 重置狀態（3秒後）
+            setTimeout(() => {
+                resetTraining();
+            }, 3000);
+        }
+        
         // 處理按鈕點擊
         function handleButtonClick() {
-            if (!isActive || !isButtonReady) return;
+            if (!isActive || !isButtonReady || hasClicked) return;
+            
+            // 標記已經點擊過
+            hasClicked = true;
+            isButtonReady = false;
+            
+            // 立即禁用按鈕，防止再次點擊
+            combinedButton.disabled = true;
+            combinedButton.className = 'clicked';
             
             const reactionTime = (Date.now() - startTime) / 1000; // 轉換為秒
             reactionTimes.push(reactionTime);
@@ -681,8 +792,8 @@
             resultTime.parentElement.classList.add('success');
             
             // 按鈕視覺反饋
-            combinedButton.className = 'clicked';
             combinedButton.textContent = '搶票成功！';
+            clickNotice.innerHTML = '<i class="fas fa-check-circle"></i> 已成功點擊！等待下一輪';
             
             // 頁面視覺反饋
             document.body.style.backgroundColor = '#003315';
@@ -701,10 +812,10 @@
             // 播放成功音效
             playSuccessSound();
             
-            // 重置狀態（2秒後）
+            // 重置狀態（3秒後）
             setTimeout(() => {
                 resetTraining();
-            }, 2000);
+            }, 3000);
         }
         
         // 重置訓練
@@ -712,7 +823,16 @@
             isActive = false;
             startBtn.disabled = false;
             isButtonReady = false;
+            hasClicked = false;
             startTime = 0;
+            
+            // 啟用難度選擇按鈕
+            difficultyButtons.forEach(btn => {
+                btn.disabled = false;
+            });
+            
+            // 重新啟用當前難度按鈕的active狀態
+            setDifficulty(currentDifficulty);
             
             if (countdownInterval) clearInterval(countdownInterval);
             
@@ -722,11 +842,14 @@
             
             // 更新狀態指示器
             updateStatusIndicator('idle');
+            clickNotice.innerHTML = '<i class="fas fa-mouse-pointer"></i> 按鈕出現後，請立即點擊（只能點擊一次）';
+            attemptInfo.textContent = '本輪嘗試：尚未開始';
         }
         
         // 重設所有數據
         function resetStats() {
             reactionTimes = [];
+            currentAttempt = 0;
             updateStats();
             saveStats();
             resetTraining();
@@ -864,7 +987,7 @@
         updateStatusIndicator('idle');
         
         // 初始提示
-        console.log("倒數與按鈕合一版本 - 準備好訓練你的搶票反應速度了嗎？點擊「開始訓練」按鈕開始！");
+        console.log("單次點擊限制版本 - 按鈕只能點擊一次！準備好訓練你的搶票反應速度了嗎？");
     </script>
 </body>
 </html>
